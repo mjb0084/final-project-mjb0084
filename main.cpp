@@ -34,18 +34,18 @@ class Item {
 };
 
 class ShoppingCart{
+    private:
+        // vector<Item> cart;
+
     public:
         // constructors for the Shopping Cart class
         ShoppingCart(){
             vector<Item> cart;
         };
         ShoppingCart(vector<Item> carT){
-            vector<Item> cart;
             cart = carT;
         };
-
-    private:
-        vector<Item> carT;
+        vector<Item> cart;
 };
 
 
@@ -54,41 +54,127 @@ class UserAccount {
         string name;
         ShoppingCart cart;
         bool isGuest;
+        bool isAdmin;
         float total;
 
     public:
 
         UserAccount(){
             name = "Guest";
-
         }
         UserAccount(string name, bool isMain);
         UserAccount(string name, ShoppingCart cart, float total, bool isGuest);
 
+        void setName(string namE){name=namE;};
+        string getName(){return name;};
 };
 
+int homeScreen1(void);
+UserAccount loginScreen(bool isGuest);
+ShoppingCart adminScreen(ShoppingCart inventory);
+int homeScreen2(void);
 Item createItem(void);
-Item editItem(Item item);
-void printHeader(void);
+UserAccount checkAccount(UserAccount useraccount);
+void displayInventory(ShoppingCart inventory);
 void printItem(Item item);
 
-int main(){
 
-    Item Potato;
-    Potato = editItem(Potato);
-    printHeader();
-    printItem(Potato);
-    printHeader();
+int main(){
+    int choice;
+    UserAccount current;
+    ShoppingCart inventory;
+
+    //this part works great
+    choice = homeScreen1();
+    if (choice ==1){current = loginScreen(1);}
+    else if (choice==2){
+        current = loginScreen(0);
+        inventory = adminScreen(inventory);
+    }
+
+
+    choice = homeScreen2();
+    if (choice==1){displayInventory(inventory);}
+
+    
+
     return 1;
 }
 
 
 void printItem(Item item){
-    cout << item.getName() << "\t" << item.getPrice() << "\t" << item.getQuantity();
+    cout << "\n"<< item.getName() << "\t" << item.getPrice() << "\t" << item.getQuantity();
 }
 
 void printHeader(void){
     cout << "\nItem\tPrice\tQuantity\n";
+}
+
+int homeScreen1(void){
+    int choice;
+    cout << "Welcome to CMart!\n\n(1) Continue as guest\n(2) Login/Make Account\n: ";
+    cin >> choice;
+    return choice;
+}
+
+ShoppingCart adminScreen(ShoppingCart inventory){
+    int choice;
+    cout << "What would you like to do?\n(1) Create Items\n: ";
+    cin >> choice;
+
+    while(choice==1){
+        inventory.cart.push_back(createItem());
+        cout << "\nCreate Another Item?(type 1 for yes)\n: ";
+        cin >> choice;
+    }
+    return inventory;
+}
+
+int homeScreen2(void){
+    int choice;
+    cout << "\nWhat would you like to do?\n(1) View Items\n(2) Search Items\n(3) View Cart\n(4) Check out\n: ";
+    cin >> choice;
+    return choice;
+}
+
+void displayInventory(ShoppingCart inventory){
+    
+    printHeader();
+    for (int i=0;i<inventory.cart.size();i++){
+        printItem(inventory.cart[i]);
+    }
+}
+
+UserAccount loginScreen(bool isGuest){
+    UserAccount useraccount;
+
+    if (isGuest){useraccount.setName("Guest");return useraccount;}
+
+    else{useraccount = checkAccount(useraccount);return useraccount;}
+    
+}
+
+UserAccount checkAccount(UserAccount useraccount){
+    string name;
+    int PIN, login=0;
+
+    while (login ==0){
+        cout << "\nUsername: ";
+        cin >> name;        
+        if (name=="Admin"){
+            cout << "\nPIN: ";
+            cin >> PIN;
+            if (PIN == 1234){useraccount.setName(name); login=1;}
+            else {cout << "\nIncorrect PIN\n";}
+        }   
+        else {useraccount.setName(name);login=1;}
+    }
+    return useraccount;
+}
+
+UserAccount editUser(UserAccount useraccount){
+    useraccount = checkAccount(useraccount);
+    return useraccount;
 }
 
 Item createItem(void){
