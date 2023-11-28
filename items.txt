@@ -11,3 +11,4 @@ Jam		3		20
 Coffee		20		100
 Water		0		10000
 Juice		20		200
+Tomatoes		10		100

@@ -78,15 +78,19 @@ class UserAccount {
 
 // continue as guest or login
 int homeScreen(void);
-
+// login to guest,user, or admin accounts
 UserAccount login(bool isGuest);
-void adminScreen(void);
-void userScreen(UserAccount& current);
+// main screen for admin
+bool adminScreen(void);
+// main screen for other users
+bool userScreen(UserAccount& current);
+// creates an Item, adds to database
 Item createItem(void);
-// UserAccount checkAccount(UserAccount useraccount);
 // display items in items.txt in sets of 10
 void displayItems(void);
+// display a singular item
 void printItem(Item item);
+// print the item name, quantity, price header
 void printHeader(void);
 // write a user to the users.txt file
 void writeUser(UserAccount user);
@@ -96,7 +100,6 @@ void writeItem(Item item);
 void initInventory(void);
 // write the header to the users file
 void initUsers(void);
-// void testFunc(ofstream& file);
 //search users.txt for name
 bool searchUsers(string name);
 // search items.txt for name, return quantity and price
@@ -107,27 +110,26 @@ void add2Cart(string name,int quantity, UserAccount& current);
 
 int main(){
     int choice;
+    bool done=0;
     UserAccount current;
 
     // initialize guest and admin accounts
     initUsers();
+    while(!done){    
+        // continue as guest or login
+        choice = homeScreen();
 
-    // continue as guest or login
-    choice = homeScreen();
-
-    // login as guest
-    if (choice ==1){current = login(1);userScreen(current);}
-    
-    // login as admin or user
-    else if (choice==2){
-        current = login(0);
-        // if current account is admin, go to admin screen
-        if(current.getAdmin()){adminScreen();}
-        else{userScreen(current);}
+        // login as guest
+        if (choice ==1){current = login(1);done=userScreen(current);}
+        
+        // login as admin or user
+        else if (choice==2){
+            current = login(0);
+            // if current account is admin, go to admin screen
+            if(current.getAdmin()){done=adminScreen();}
+            else{done=userScreen(current);}
+        }
     }
-
-    
-
     return 1;
 }
 
@@ -142,17 +144,17 @@ void printHeader(void){
 
 int homeScreen(void){
     int choice;
-    cout << "Welcome to CMart!\n\n(1) Continue as guest\n(2) Login/Make Account\n: ";
+    cout << "-----\nWelcome to CMart!\n-----\n\n(1) Continue as guest\n(2) Login/Make Account\n: ";
     cin >> choice;
     return choice;
 }
 
-void adminScreen(void){
+bool adminScreen(void){
     int choice;
     bool done=0;
 
     while (done==0){
-        cout << "What would you like to do?\n(1) Create Items\n(2) Clear Item Database\n(3) Display Items\n(6)Quit\n: ";
+        cout << "What would you like to do?\n(1) Create Items\n(2) Clear Item Database\n(3) Display Items\n(4) Main Menu\n(6) Quit\n: ";
         cin >> choice;
 
         if(choice==1){
@@ -167,18 +169,19 @@ void adminScreen(void){
             initInventory();
         }
         else if(choice==3){displayItems();}
-        else if(choice==6){break;}
+        else if(choice==4){return 0;}
+        else if(choice==6){return 1;}
     }
     
 }
 
-void userScreen(UserAccount& current1){
+bool userScreen(UserAccount& current1){
     int choice=0;
 
-    while((choice!=6)&&(choice!=5)){
+    while((choice!=6)&&(choice!=4)){
         string name="";
         int quantity=0;
-        cout << "\nWhat would you like to do?\n(1) View Items\n(3) Add to Cart\n(6) Exit\n: ";
+        cout << "\nWhat would you like to do?\n(1) View Items\n(3) Add to Cart\n(4) Main Menu\n(6) Exit\n: ";
         cin >> choice;    
         switch(choice){
             case 1:
@@ -197,11 +200,14 @@ void userScreen(UserAccount& current1){
                 add2Cart(name,quantity,current1);
                 break;
             case 4:
+                return 0;
                 //viewCart();
-                break;
+                // break;
             case 5:
                 //checkOut();
                 break;
+            case 6:
+                return 1;
             default:
                 break;
         }
@@ -243,7 +249,6 @@ void displayItems(void){
         }
     }    
 }
-
 
 UserAccount login(bool isGuest){
     UserAccount useraccount;
@@ -309,7 +314,6 @@ UserAccount login(bool isGuest){
     }
     
 }
-
 
 Item createItem(void){
     string name;
