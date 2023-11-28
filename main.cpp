@@ -1,5 +1,6 @@
 #include <iostream> 
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -67,33 +68,46 @@ class UserAccount {
 
         void setName(string namE){name=namE;};
         string getName(){return name;};
+        void setGuest(bool status){isGuest=status;};
+        void setAdmin(bool status){isAdmin=status;};
 };
 
+// continue as guest or login
 int homeScreen1(void);
-UserAccount loginScreen(bool isGuest);
-ShoppingCart adminScreen(ShoppingCart inventory);
-int homeScreen2(void);
+
+UserAccount login(bool isGuest);
+bool adminScreen(bool firsttime);
+int userScreen(void);
 Item createItem(void);
 UserAccount checkAccount(UserAccount useraccount);
 void displayInventory(ShoppingCart inventory);
 void printItem(Item item);
-
+void printHeader(void);
+// write an item object to the inventory file
+void writeItem(Item item);
+// write the header to the inventory file
+void initInventory(void);
 
 int main(){
     int choice;
     UserAccount current;
     ShoppingCart inventory;
+    bool firsttime=1;
 
-    //this part works great
+    // continue as guest or login
     choice = homeScreen1();
-    if (choice ==1){current = loginScreen(1);}
+
+    // login as guest
+    if (choice ==1){current = login(1);}
+    
+    // login as admin or user
     else if (choice==2){
-        current = loginScreen(0);
-        inventory = adminScreen(inventory);
+        current = login(0);
+        firsttime = adminScreen(firsttime);
     }
 
-
-    choice = homeScreen2();
+    // view items, search items, view cart, checkout
+    choice = userScreen();
     if (choice==1){displayInventory(inventory);}
 
     
@@ -107,7 +121,7 @@ void printItem(Item item){
 }
 
 void printHeader(void){
-    cout << "\nItem\tPrice\tQuantity\n";
+    cout << "\nItem\t\tPrice\t\tQuantity\n";
 }
 
 int homeScreen1(void){
@@ -117,20 +131,23 @@ int homeScreen1(void){
     return choice;
 }
 
-ShoppingCart adminScreen(ShoppingCart inventory){
+bool adminScreen(bool firsttime){
     int choice;
+
+    if(firsttime){initInventory();firsttime=0;}
+
     cout << "What would you like to do?\n(1) Create Items\n: ";
     cin >> choice;
 
     while(choice==1){
-        inventory.cart.push_back(createItem());
+        createItem();
         cout << "\nCreate Another Item?(type 1 for yes)\n: ";
         cin >> choice;
     }
-    return inventory;
+    return firsttime;
 }
 
-int homeScreen2(void){
+int userScreen(void){
     int choice;
     cout << "\nWhat would you like to do?\n(1) View Items\n(2) Search Items\n(3) View Cart\n(4) Check out\n: ";
     cin >> choice;
@@ -139,41 +156,62 @@ int homeScreen2(void){
 
 void displayInventory(ShoppingCart inventory){
     
-    printHeader();
-    for (int i=0;i<inventory.cart.size();i++){
-        printItem(inventory.cart[i]);
-    }
+
+
+    // printHeader(cout);
+    // for (int i=0;i<inventory.cart.size();i++){
+    //     printItem(inventory.cart[i]);
+    // }
 }
 
-UserAccount loginScreen(bool isGuest){
+UserAccount login(bool isGuest){
     UserAccount useraccount;
 
-    if (isGuest){useraccount.setName("Guest");return useraccount;}
+    // set current account as guest
+    if (isGuest){
+        useraccount.setName("Guest");
+        useraccount.setGuest(1);
+        useraccount.setAdmin(0);
+        return useraccount;
+    }
 
-    else{useraccount = checkAccount(useraccount);return useraccount;}
+    // go to login screen
+    else{
+        string name;
+        int PIN, login=0;
+
+        while (login==0){
+            cout << "\nUsername: ";
+            cin >> name;        
+            if (name=="Admin"){
+                cout << "\nPIN: ";
+                cin >> PIN;
+                // login as admin
+                if (PIN == 1234){
+                    useraccount.setName(name); 
+                    useraccount.setGuest(0);
+                    useraccount.setAdmin(1);
+                    login=1;
+                }
+                else {cout << "\nIncorrect PIN\n";}
+            }
+            // login as another user   
+            else {
+                useraccount.setName(name);
+                useraccount.setGuest(0);
+                useraccount.setAdmin(0);
+                login=1;
+            }
+        }
+        return useraccount;
+    }
     
 }
 
-UserAccount checkAccount(UserAccount useraccount){
-    string name;
-    int PIN, login=0;
 
-    while (login ==0){
-        cout << "\nUsername: ";
-        cin >> name;        
-        if (name=="Admin"){
-            cout << "\nPIN: ";
-            cin >> PIN;
-            if (PIN == 1234){useraccount.setName(name); login=1;}
-            else {cout << "\nIncorrect PIN\n";}
-        }   
-        else {useraccount.setName(name);login=1;}
-    }
-    return useraccount;
-}
 
 UserAccount editUser(UserAccount useraccount){
-    useraccount = checkAccount(useraccount);
+    // useraccount = checkAccount(useraccount);
     return useraccount;
 }
 
@@ -192,6 +230,7 @@ Item createItem(void){
     cin >> quantity;
 
     Item newItem(name,price,quantity);
+    writeItem(newItem);
     return newItem;
 }
 
@@ -235,4 +274,20 @@ Item editItem(Item item){
         }
     }
     return item;
+}
+
+
+void writeItem(Item item){
+    ofstream file;
+
+    file.open("items.txt",ios::app);
+    file << "\n" << item.getName() << "\t\t" << item.getPrice() << "\t\t" << item.getQuantity() << "\n";
+    file.close();   
+}
+
+void initInventory(void){
+    ofstream file;
+    file.open("items.txt");
+
+    file << "Item\t\tPrice\t\tQuantity\n";
 }
