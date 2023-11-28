@@ -1,6 +1,7 @@
 #include <iostream> 
 #include <vector>
 #include <fstream>
+#include <string>
 
 using namespace std;
 
@@ -53,7 +54,8 @@ class ShoppingCart{
 class UserAccount {
     private:
         string name;
-        ShoppingCart cart;
+        // ShoppingCart cart;
+        vector<Item> cart;
         bool isGuest;
         bool isAdmin;
         float total;
@@ -70,45 +72,59 @@ class UserAccount {
         string getName(){return name;};
         void setGuest(bool status){isGuest=status;};
         void setAdmin(bool status){isAdmin=status;};
+        bool getAdmin(void){return isAdmin;};
+        void add2Cart(Item item){cart.push_back(item);}
 };
 
 // continue as guest or login
-int homeScreen1(void);
+int homeScreen(void);
 
 UserAccount login(bool isGuest);
-bool adminScreen(bool firsttime);
-int userScreen(void);
+void adminScreen(void);
+void userScreen(UserAccount& current);
 Item createItem(void);
-UserAccount checkAccount(UserAccount useraccount);
-void displayInventory(ShoppingCart inventory);
+// UserAccount checkAccount(UserAccount useraccount);
+// display items in items.txt in sets of 10
+void displayItems(void);
 void printItem(Item item);
 void printHeader(void);
+// write a user to the users.txt file
+void writeUser(UserAccount user);
 // write an item object to the inventory file
 void writeItem(Item item);
-// write the header to the inventory file
+// write the header to the inventory file and vector<Item> of all Items
 void initInventory(void);
+// write the header to the users file
+void initUsers(void);
+// void testFunc(ofstream& file);
+//search users.txt for name
+bool searchUsers(string name);
+// search items.txt for name, return quantity and price
+int searchItems(string name);
+// add items to shopping cart
+void add2Cart(string name,int quantity, UserAccount& current);
+
 
 int main(){
     int choice;
     UserAccount current;
-    ShoppingCart inventory;
-    bool firsttime=1;
+
+    // initialize guest and admin accounts
+    initUsers();
 
     // continue as guest or login
-    choice = homeScreen1();
+    choice = homeScreen();
 
     // login as guest
-    if (choice ==1){current = login(1);}
+    if (choice ==1){current = login(1);userScreen(current);}
     
     // login as admin or user
     else if (choice==2){
         current = login(0);
-        firsttime = adminScreen(firsttime);
+        // if current account is admin, go to admin screen
+        if(current.getAdmin()){adminScreen();}
+        else{userScreen(current);}
     }
-
-    // view items, search items, view cart, checkout
-    choice = userScreen();
-    if (choice==1){displayInventory(inventory);}
 
     
 
@@ -124,45 +140,110 @@ void printHeader(void){
     cout << "\nItem\t\tPrice\t\tQuantity\n";
 }
 
-int homeScreen1(void){
+int homeScreen(void){
     int choice;
     cout << "Welcome to CMart!\n\n(1) Continue as guest\n(2) Login/Make Account\n: ";
     cin >> choice;
     return choice;
 }
 
-bool adminScreen(bool firsttime){
+void adminScreen(void){
     int choice;
+    bool done=0;
 
-    if(firsttime){initInventory();firsttime=0;}
-
-    cout << "What would you like to do?\n(1) Create Items\n: ";
-    cin >> choice;
-
-    while(choice==1){
-        createItem();
-        cout << "\nCreate Another Item?(type 1 for yes)\n: ";
+    while (done==0){
+        cout << "What would you like to do?\n(1) Create Items\n(2) Clear Item Database\n(3) Display Items\n(6)Quit\n: ";
         cin >> choice;
+
+        if(choice==1){
+            bool another=1;
+            while(another!=0){
+                createItem();
+                cout << "\nCreate Another Item?(type 0 for no/1 for yes)\n: ";
+                cin >> another;
+            }
+        }
+        else if(choice==2){
+            initInventory();
+        }
+        else if(choice==3){displayItems();}
+        else if(choice==6){break;}
     }
-    return firsttime;
-}
-
-int userScreen(void){
-    int choice;
-    cout << "\nWhat would you like to do?\n(1) View Items\n(2) Search Items\n(3) View Cart\n(4) Check out\n: ";
-    cin >> choice;
-    return choice;
-}
-
-void displayInventory(ShoppingCart inventory){
     
-
-
-    // printHeader(cout);
-    // for (int i=0;i<inventory.cart.size();i++){
-    //     printItem(inventory.cart[i]);
-    // }
 }
+
+void userScreen(UserAccount& current1){
+    int choice=0;
+
+    while((choice!=6)&&(choice!=5)){
+        string name="";
+        int quantity=0;
+        cout << "\nWhat would you like to do?\n(1) View Items\n(3) Add to Cart\n(6) Exit\n: ";
+        cin >> choice;    
+        switch(choice){
+            case 1:
+                displayItems();
+                break;
+            case 2:
+                cout << "\nEnter the name of the item: ";
+                cin >> name;
+                searchItems(name);
+                break;
+            case 3:
+                cout << "\nEnter the name of the item: ";
+                cin >> name;
+                cout << "\nEnter the quantity of the item: ";
+                cin >> quantity;
+                add2Cart(name,quantity,current1);
+                break;
+            case 4:
+                //viewCart();
+                break;
+            case 5:
+                //checkOut();
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void displayItems(void){
+    ifstream file;
+    string next;
+    bool done=0;
+    int count=0;
+    char response;
+    file.open("items.txt");
+
+    printHeader();
+    // skip heading in items.txt
+    getline(file,next);
+    getline(file,next);
+    while(!done){
+        if(file.eof()){
+            cout << next <<"\nThat's all the items!";
+            cin.get(response);
+            cin.get(response);
+            done=1;
+            }
+        else if(count<10){
+            cout << next <<"\n";
+            getline(file,next);
+            count++;
+        }
+        else{
+            cout << "\nType m for more or press enter: ";
+            cin.get(response);
+            cin.get(response);
+            if(response=='m'){
+                count=0;
+            }
+            else{done=1;}
+        }
+    }    
+}
+
 
 UserAccount login(bool isGuest){
     UserAccount useraccount;
@@ -197,10 +278,31 @@ UserAccount login(bool isGuest){
             }
             // login as another user   
             else {
-                useraccount.setName(name);
-                useraccount.setGuest(0);
-                useraccount.setAdmin(0);
-                login=1;
+                // search users.txt for name
+                if (searchUsers(name)){
+                    useraccount.setName(name);
+                    useraccount.setGuest(0);
+                    useraccount.setAdmin(0);
+                    login=1;
+                }
+                else {
+                    cout << "\nThat account does not exist, would you like to create it as a new account?(y/n)\n: ";
+                    char response;
+                    cin.get(response);
+                    cin.get(response);
+                    if (response=='y'){
+                        // create user account w/ name
+                        useraccount.setName(name);
+                        useraccount.setGuest(0);
+                        useraccount.setAdmin(0); 
+                        writeUser(useraccount);   
+                        login=1;
+                    }
+                    else{
+                        // go back to login
+                    }
+                }
+                
             }
         }
         return useraccount;
@@ -208,12 +310,6 @@ UserAccount login(bool isGuest){
     
 }
 
-
-
-UserAccount editUser(UserAccount useraccount){
-    // useraccount = checkAccount(useraccount);
-    return useraccount;
-}
 
 Item createItem(void){
     string name;
@@ -276,12 +372,17 @@ Item editItem(Item item){
     return item;
 }
 
+void writeUser(UserAccount user){
+    ofstream file;
+    file.open("users.txt",ios::app);
+    file << "\n" << user.getName();
+}
 
 void writeItem(Item item){
     ofstream file;
 
     file.open("items.txt",ios::app);
-    file << "\n" << item.getName() << "\t\t" << item.getPrice() << "\t\t" << item.getQuantity() << "\n";
+    file << "\n" << item.getName() << "\t\t" << item.getPrice() << "\t\t" << item.getQuantity();
     file.close();   
 }
 
@@ -290,4 +391,80 @@ void initInventory(void){
     file.open("items.txt");
 
     file << "Item\t\tPrice\t\tQuantity\n";
+    file.close();
 }
+
+void initUsers(void){
+    ofstream file;
+    file.open("users.txt");
+
+    file << "Name\n\nAdmin\nGuest";
+    file.close();
+}
+
+bool searchUsers(string name){
+    ifstream file;
+    string query;
+    bool isThere=0;
+    bool done=0;
+    file.open("users.txt");
+
+    getline(file,query);
+    while(!done){
+        if (query==name){
+            isThere=1;
+        }
+        if(file.eof()){
+                done=1;
+        }
+        getline(file,query);
+    }
+    return isThere;
+
+}
+
+int searchItems(string name){
+    ifstream file;
+    string query;
+    string queryn="";
+    bool isThere=0;
+    bool done=0;
+    int quantity=0;
+    file.open("items.txt");
+
+    getline(file,query);
+    while(!done){
+        for(int i=0; i<size(query);i++){
+            // write all alphanum into queryn
+            if(!isalnum(query[i])){
+                break;
+            }
+            else {
+                queryn[i]=query[i];
+                }
+        }
+
+        if (queryn==name){
+            cout << query;
+            isThere=1;
+            done=1;
+        }
+        if(file.eof()){
+                done=1;
+        }
+        getline(file,query);
+        queryn="\0\0\0\0\0\0\0\0\0\0\0\0\0";
+    }
+    return quantity;
+}
+
+void add2Cart(string name,int quantity, UserAccount& current){
+    Item item;
+    item.setName(name);
+    item.setQuantity(quantity);
+    current.add2Cart(item);
+}
+
+// void testFunc(ofstream& file){
+//     file << "Test";
+// }
